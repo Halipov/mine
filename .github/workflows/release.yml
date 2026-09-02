@@ -39,6 +39,28 @@ jobs:
 
       - run: npx electron-builder ${{ matrix.flag }} --publish never
 
+      # Несогласованная подпись обнаруживается только при запуске: приложение
+      # падает в dyld, не дойдя до своего кода. Ловим это здесь, а не на
+      # чужом макбуке.
+      - name: Проверить подпись и запуск macOS-сборки
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -euo pipefail
+
+          for app in dist/*/*.app; do
+            echo "== проверяю подпись: $app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
+
+          arm="dist/mac-arm64/Mine Launcher.app/Contents/MacOS/Mine Launcher"
+          if [ ! -x "$arm" ]; then
+            echo "не нашёл arm64-сборку по пути $arm" >&2
+            exit 1
+          fi
+
+          echo "== запускаю собранное приложение"
+          "$arm" --selftest
+
       - uses: actions/upload-artifact@v4
         with:
           name: MineLauncher-${{ matrix.os }}
