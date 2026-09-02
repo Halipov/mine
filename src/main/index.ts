@@ -257,7 +257,12 @@ function attachGameHandlers(settings: Settings): void {
 
 // --- Жизненный цикл ---------------------------------------------------------
 
-if (!app.requestSingleInstanceLock()) {
+// Диагностический прогон не считается второй копией лаунчера: иначе при
+// открытом окне он молча завершался бы с нулевым кодом, и проверка выглядела
+// бы пройденной, ничего не проверив.
+const isSelfTest = process.argv.includes('--selftest')
+
+if (!isSelfTest && !app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => {
@@ -269,7 +274,7 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(async () => {
     // Диагностический режим: прогоняем всю установку и выходим, окно не нужно.
-    if (process.argv.includes('--selftest')) {
+    if (isSelfTest) {
       const { runSelfTest } = await import('./selftest')
       let code = 1
       try {
