@@ -1,7 +1,7 @@
 name: Сборка лаунчера
 
 # Раздачей занимается наш сервер, а не GitHub, поэтому здесь только сборка.
-# Нужна она в первую очередь ради macOS: .app и .dmg с Windows не собрать,
+# Нужна она в первую очередь ради macOS: .app с Windows не собрать,
 # а ad-hoc подпись требует настоящей macOS.
 #
 # Готовые файлы приезжают артефактами запуска. Скачал, распаковал в dist/
@@ -66,7 +66,6 @@ jobs:
           name: MineLauncher-${{ matrix.os }}
           path: |
             dist/*.exe
-            dist/*.dmg
             dist/*.zip
           if-no-files-found: error
           retention-days: 30

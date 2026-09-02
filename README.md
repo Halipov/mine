@@ -56,7 +56,7 @@ SELFTEST_MANIFEST=../mine-server/web/pack.json npm run selftest
 Единственный файл — [`src/shared/config.ts`](src/shared/config.ts):
 
 ```ts
-baseUrl: 'http://127.0.0.1:8080'
+baseUrl: 'http://193.124.224.225'
 ```
 
 Это корень раздачи: оттуда берутся манифест сборки (`/pack.json`) и
@@ -162,7 +162,6 @@ cd ~/Downloads && curl -LO http://193.124.224.225/launcher/MineLauncher-0.1.2-ma
 unzip -q MineLauncher-0.1.2-mac-arm64.zip -d /Applications
 ```
 
-Для Intel-маков — файл с `mac-x64` в имени.
 
 **Убрать предупреждение совсем** можно только сертификатом Apple Developer
 ($99 в год) с нотаризацией. Для сборки на пятерых это едва ли оправдано, но

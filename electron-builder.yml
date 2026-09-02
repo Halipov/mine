@@ -26,11 +26,15 @@ nsis:
 
 mac:
   category: public.app-category.games
+  # Только arm64 и только zip.
+  #
+  # Intel-маки — машины до 2020 года, поддержка удваивала бы вес каждой
+  # сборки ради тех, у кого их нет. А dmg в нашей схеме раздачи никем не
+  # используется: publish-launcher забирает zip (из него ставится
+  # обновление), dmg просто лежал бы мёртвым грузом.
   target:
     - target: zip
-      arch: [arm64, x64]
-    - target: dmg
-      arch: [arm64, x64]
+      arch: [arm64]
   # Сертификата Apple Developer нет, поэтому обычную подпись отключаем,
   # а вместо неё в afterPack ставим ad-hoc — без неё приложение на Apple
   # Silicon просто не запустится.
