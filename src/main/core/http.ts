@@ -17,7 +17,13 @@ export interface DownloadTask {
   executable?: boolean
 }
 
-const RETRIES = 4
+/**
+ * Домашние подключения рвутся, провайдеры фильтруют, зеркала моргают.
+ * Почти всё это лечится повтором, поэтому попыток много, а пауза между
+ * ними растёт: суммарно около полуминуты на файл, прежде чем сдаться.
+ */
+const RETRIES = 6
+const RETRY_CAP_MS = 8000
 const CONCURRENCY = 8
 const UA = 'MineLauncher'
 /**
@@ -121,7 +127,7 @@ async function downloadOne(task: DownloadTask, onBytes: (n: number) => void): Pr
         if (!expected) continue
         const actual = await hashFile(tmp, algorithm)
         if (actual !== expected.toLowerCase()) {
-          throw new Error(`Контрольная сумма не сошлась для ${path.basename(task.dest)}`)
+          throw new Error(await describeBadContent(tmp, task))
         }
       }
       await fs.rm(task.dest, { force: true })
@@ -133,10 +139,51 @@ async function downloadOne(task: DownloadTask, onBytes: (n: number) => void): Pr
       // Откатываем счётчик, иначе повтор задерёт полосу прогресса выше 100%.
       onBytes(-written)
       await fs.rm(tmp, { force: true }).catch(() => {})
-      if (attempt < RETRIES - 1) await delay(400 * 2 ** attempt)
+      if (attempt < RETRIES - 1) {
+        await delay(Math.min(500 * 2 ** attempt, RETRY_CAP_MS))
+      }
     }
   }
-  throw new Error(`Не удалось скачать ${task.url}\n${String(lastError)}`)
+
+  const reason = lastError instanceof Error ? lastError.message : String(lastError)
+  throw new Error(
+    `Не удалось скачать ${path.basename(task.dest)} за ${RETRIES} попыток.\n` +
+      `${reason}\n` +
+      `Источник: ${task.url}\n` +
+      'Чаще всего это временные проблемы с сетью — попробуй запустить ещё раз.'
+  )
+}
+
+/**
+ * Что на самом деле приехало вместо файла.
+ *
+ * Голое «контрольная сумма не сошлась» ничего не объясняет, а причины
+ * разные: оборванная закачка даёт файл не того размера, а страница-заглушка
+ * от провайдера или точки доступа — html вместо архива. Разница видна сразу,
+ * если на неё посмотреть.
+ */
+async function describeBadContent(tmp: string, task: DownloadTask): Promise<string> {
+  const name = path.basename(task.dest)
+  const size = await fs.stat(tmp).then((s) => s.size, () => 0)
+
+  const head = await fs
+    .readFile(tmp)
+    .then((buffer) => buffer.subarray(0, 200).toString('utf8'))
+    .catch(() => '')
+
+  if (/^\s*<(!doctype|html|\?xml)/i.test(head)) {
+    return (
+      `Вместо ${name} пришла веб-страница (${size} Б). ` +
+      'Так отвечают заглушки провайдера, корпоративные прокси и порталы ' +
+      'публичного wi-fi — файл до нас не дошёл.'
+    )
+  }
+
+  if (task.size && size !== task.size) {
+    return `${name} скачался не полностью: ${size} Б вместо ${task.size} Б — связь оборвалась.`
+  }
+
+  return `${name} скачался повреждённым: ${size} Б, контрольная сумма не совпала.`
 }
 
 /** Скачивает одиночный файл, отдавая прогресс долей 0..1. */
