@@ -42,24 +42,35 @@ jobs:
       # Несогласованная подпись обнаруживается только при запуске: приложение
       # падает в dyld, не дойдя до своего кода. Ловим это здесь, а не на
       # чужом макбуке.
-      - name: Проверить подпись и запуск macOS-сборки
+      # Проверяем не папку сборки, а тот самый архив, который уедет друзьям:
+      # бандл ломается и при упаковке-распаковке, если теряются симлинки
+      # фреймворков или бит исполнения. Такую поломку видно только после
+      # round-trip, и до сих пор она доезжала до чужого макбука.
+      - name: Проверить архив macOS так, как его получит игрок
         if: matrix.os == 'macos-latest'
         run: |
           set -euo pipefail
 
-          for app in dist/*/*.app; do
-            echo "== проверяю подпись: $app"
-            codesign --verify --deep --strict --verbose=2 "$app"
-          done
+          zip=$(ls dist/*-mac-arm64.zip)
+          echo "== архив: $zip"
 
-          arm="dist/mac-arm64/Mine Launcher.app/Contents/MacOS/Mine Launcher"
-          if [ ! -x "$arm" ]; then
-            echo "не нашёл arm64-сборку по пути $arm" >&2
-            exit 1
-          fi
+          unpacked="$RUNNER_TEMP/unpacked"
+          rm -rf "$unpacked" && mkdir -p "$unpacked"
+          ditto -x -k "$zip" "$unpacked"
 
-          echo "== запускаю собранное приложение"
-          "$arm" --selftest
+          app="$unpacked/Mine Launcher.app"
+          [ -d "$app" ] || { echo "в архиве нет .app" >&2; exit 1; }
+
+          echo "== симлинки фреймворков на месте?"
+          find "$app/Contents/Frameworks" -maxdepth 4 -type l | head -5
+          test -n "$(find "$app/Contents/Frameworks" -maxdepth 4 -type l)" \
+            || { echo "симлинки потерялись при упаковке" >&2; exit 1; }
+
+          echo "== подпись"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+          echo "== запуск"
+          "$app/Contents/MacOS/Mine Launcher" --selftest
 
       - uses: actions/upload-artifact@v5
         with:
