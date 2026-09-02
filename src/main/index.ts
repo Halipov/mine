@@ -1,7 +1,14 @@
 import type { ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { BrowserWindow, app, ipcMain, shell } from 'electron'
-import type { PackManifest, Profile, Progress, Settings, UpdateInfo } from '@shared/types'
+import type {
+  BootState,
+  PackManifest,
+  Profile,
+  Progress,
+  Settings,
+  UpdateInfo
+} from '@shared/types'
 import { APP } from '@shared/config'
 import { prepareAndLaunch } from './core/installer'
 import { cacheManifest, compareVersions, fetchManifest, loadCachedManifest } from './core/manifest'
@@ -10,6 +17,7 @@ import { memoryLimitsMb } from './core/platform'
 import {
   NICKNAME_PATTERN,
   activeProfile,
+  effectiveManifestUrl,
   loadSettings,
   makeProfile,
   saveSettings
@@ -78,20 +86,10 @@ function createWindow(): void {
 
 // --- IPC --------------------------------------------------------------------
 
-interface BootState {
-  settings: Settings
-  manifest: PackManifest | null
-  manifestError: string | null
-  memory: ReturnType<typeof memoryLimitsMb>
-  appVersion: string
-  platform: NodeJS.Platform
-  log: string[]
-}
-
 async function refreshManifest(): Promise<{ manifest: PackManifest | null; error: string | null }> {
   const settings = await loadSettings()
   try {
-    manifest = await fetchManifest(settings.manifestUrl)
+    manifest = await fetchManifest(effectiveManifestUrl(settings))
     await cacheManifest(manifest)
     return { manifest, error: null }
   } catch (err) {
@@ -122,7 +120,8 @@ function registerIpc(): void {
       memory: memoryLimitsMb(),
       appVersion: app.getVersion(),
       platform: process.platform,
-      log: [...log]
+      log: [...log],
+      defaultManifestUrl: APP.manifestUrl
     }
   })
 

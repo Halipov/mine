@@ -92,8 +92,14 @@ export interface Settings {
   /** Дополнительные аргументы JVM, по одному на строку. Для тех, кто знает зачем. */
   extraJvmArgs: string
   keepLauncherOpen: boolean
-  /** Куда лаунчер ходит за манифестом сборки. */
-  manifestUrl: string
+  /**
+   * Явное переопределение адреса манифеста; null — брать вкомпилированный.
+   *
+   * Хранить здесь сам адрес нельзя: сохранённое значение перекрывало бы
+   * вкомпилированное, и смена адреса раздачи не доезжала бы ни до кого,
+   * кто уже запускал лаунчер хоть раз.
+   */
+  manifestUrlOverride: string | null
 }
 
 /** Этапы подготовки, которые видит игрок. */
@@ -136,6 +142,8 @@ export interface BootState {
   appVersion: string
   platform: string
   log: string[]
+  /** Вкомпилированный адрес манифеста — показываем как подсказку в настройках. */
+  defaultManifestUrl: string
 }
 
 export interface UpdateInfo {

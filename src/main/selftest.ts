@@ -10,6 +10,8 @@ import { fetchManifest } from './core/manifest'
 import { exists, paths } from './core/paths'
 import { memoryLimitsMb } from './core/platform'
 import { syncPackFiles } from './core/sync'
+import { APP } from '@shared/config'
+import { effectiveManifestUrl, loadSettings } from './settings'
 
 const run = promisify(execFile)
 
@@ -42,14 +44,28 @@ export async function runSelfTest(): Promise<number> {
   check('оффлайн-UUID третьей версии', uuid[14] === '3')
   check('оффлайн-UUID с правильным variant', '89ab'.includes(uuid[19]))
 
-  // 2. Манифест: либо настоящий, либо собранный из свежих версий с Modrinth.
+  // 2. Куда лаунчер реально пойдёт за манифестом. Заодно проверяем, что
+  //    сохранённые настройки не перекрывают вкомпилированный адрес: раньше
+  //    он записывался в settings.json целиком и застревал там навсегда.
+  console.log('\n--- настройки ---')
+  const stored = await loadSettings()
+  const target = effectiveManifestUrl(stored)
+  check(
+    stored.manifestUrlOverride
+      ? 'адрес манифеста переопределён игроком'
+      : 'адрес манифеста берётся из конфига лаунчера',
+    stored.manifestUrlOverride ? target === stored.manifestUrlOverride : target === APP.manifestUrl,
+    target
+  )
+
+  // 3. Манифест: либо настоящий, либо собранный из свежих версий с Modrinth.
   console.log('\n--- манифест ---')
   const manifest = process.env.SELFTEST_MANIFEST
     ? await fetchManifest(process.env.SELFTEST_MANIFEST)
     : await syntheticManifest(mcVersion)
   check('манифест получен', true, `${manifest.name}, модов: ${manifest.mods.length}`)
 
-  // 3. Основной конвейер.
+  // 4. Основной конвейер.
   console.log('\n--- подготовка ---')
   const settings: Settings = {
     profiles: [],
@@ -57,7 +73,7 @@ export async function runSelfTest(): Promise<number> {
     ramMb: Math.min(4096, memoryLimitsMb().max),
     extraJvmArgs: '',
     keepLauncherOpen: true,
-    manifestUrl: ''
+    manifestUrlOverride: null
   }
   const profile: Profile = { id: 'selftest', name: 'Steve', uuid: offlineUuid('Steve') }
 
@@ -84,13 +100,13 @@ export async function runSelfTest(): Promise<number> {
     onLog: () => {}
   })
 
-  // 4. Java должна не просто скачаться, а запускаться.
+  // 5. Java должна не просто скачаться, а запускаться.
   console.log('\n--- проверки результата ---')
   const { stderr } = await run(launchOptions.javaPath, ['-version'])
   const javaLine = stderr.split('\n')[0]?.trim() ?? ''
   check('скачанная Java запускается', javaLine.length > 0, javaLine)
 
-  // 5. Classpath: client.jar, загрузчик Fabric и никаких нативных архивов.
+  // 6. Classpath: client.jar, загрузчик Fabric и никаких нативных архивов.
   const cp = launchOptions.classpath
   check('client.jar в classpath', cp.some((p) => p.endsWith(`${mcVersion}.jar`)))
   check(
@@ -103,7 +119,7 @@ export async function runSelfTest(): Promise<number> {
     new Set(cp.map((p) => path.basename(p))).size === cp.length
   )
 
-  // 6. Нативные библиотеки. До 1.19 их распаковывали в отдельную папку,
+  // 7. Нативные библиотеки. До 1.19 их распаковывали в отдельную папку,
   //    с 1.19 они остаются в classpath — подходит любой из вариантов,
   //    но хотя бы один должен сработать, иначе игра упадёт на LWJGL.
   const nativeToken =
@@ -130,7 +146,7 @@ export async function runSelfTest(): Promise<number> {
     () => false
   ))
 
-  // 7. Моды на месте, лишнего нет. Манифест общий с сервером, поэтому
+  // 8. Моды на месте, лишнего нет. Манифест общий с сервером, поэтому
   //    считаем только те, что предназначены клиенту.
   const modsDir = path.join(launchOptions.gameDir, 'mods')
   const clientMods = manifest.mods.filter((mod) => mod.side !== 'server')
@@ -149,7 +165,7 @@ export async function runSelfTest(): Promise<number> {
     serverOnly.length > 0 ? `серверных в манифесте: ${serverOnly.length}` : 'таких в сборке нет'
   )
 
-  // 8. Синхронизация состава: убранный из сборки мод должен исчезнуть,
+  // 9. Синхронизация состава: убранный из сборки мод должен исчезнуть,
   //    а мод, который игрок положил сам, — остаться. Это ровно то место,
   //    где легко случайно стереть чужие файлы.
   if (clientMods.length > 0) {
@@ -176,7 +192,7 @@ export async function runSelfTest(): Promise<number> {
     await fs.rm(personal, { force: true })
   }
 
-  // 9. servers.dat читается обратно и содержит наш сервер первым.
+  // 10. servers.dat читается обратно и содержит наш сервер первым.
   if (manifest.server) {
     const file = path.join(launchOptions.gameDir, 'servers.dat')
     const { parsed } = await nbt.parse(await fs.readFile(file))
@@ -189,7 +205,7 @@ export async function runSelfTest(): Promise<number> {
     check('наш сервер первый в списке', list?.[0]?.ip === expected, list?.[0]?.ip)
   }
 
-  // 10. Командная строка.
+  // 11. Командная строка.
   const command = buildCommand(launchOptions)
   check('main-класс от Fabric', command.includes(launchOptions.version.mainClass), launchOptions.version.mainClass)
   check('classpath передан', command.includes('-cp') || command.includes('-classpath'))

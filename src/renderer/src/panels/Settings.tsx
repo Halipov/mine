@@ -5,6 +5,7 @@ import { formatRam } from '../format'
 interface Props {
   settings: Settings
   memory: MemoryLimits
+  defaultManifestUrl: string
   onPatch: (patch: Partial<Settings>) => Promise<void>
   onProfilesChanged: (settings: Settings) => void
 }
@@ -12,13 +13,14 @@ interface Props {
 export function SettingsPanel({
   settings,
   memory,
+  defaultManifestUrl,
   onPatch,
   onProfilesChanged
 }: Props): JSX.Element {
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [ram, setRam] = useState(settings.ramMb)
-  const [manifestUrl, setManifestUrl] = useState(settings.manifestUrl)
+  const [manifestUrl, setManifestUrl] = useState(settings.manifestUrlOverride ?? '')
   const [jvmArgs, setJvmArgs] = useState(settings.extraJvmArgs)
 
   const addProfile = async (): Promise<void> => {
@@ -116,12 +118,15 @@ export function SettingsPanel({
 
       <h2>Для продвинутых</h2>
       <label className="field">
-        <span>Адрес манифеста сборки</span>
+        <span>
+          Адрес манифеста сборки. Пусто — как в лаунчере ({defaultManifestUrl})
+        </span>
         <input
           className="input"
           value={manifestUrl}
+          placeholder={defaultManifestUrl}
           onChange={(e) => setManifestUrl(e.target.value)}
-          onBlur={() => void onPatch({ manifestUrl: manifestUrl.trim() })}
+          onBlur={() => void onPatch({ manifestUrlOverride: manifestUrl.trim() || null })}
           spellCheck={false}
         />
       </label>

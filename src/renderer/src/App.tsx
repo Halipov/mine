@@ -172,6 +172,7 @@ export function App(): JSX.Element {
             <SettingsPanel
               settings={settings}
               memory={boot.memory}
+              defaultManifestUrl={boot.defaultManifestUrl}
               onPatch={patchSettings}
               onProfilesChanged={setSettings}
             />

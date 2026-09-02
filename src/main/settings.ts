@@ -15,16 +15,32 @@ function defaults(): Settings {
     ramMb: memoryLimitsMb().recommended,
     extraJvmArgs: '',
     keepLauncherOpen: false,
-    manifestUrl: APP.manifestUrl
+    manifestUrlOverride: null
   }
+}
+
+/** Адрес манифеста: переопределение игрока либо вкомпилированный. */
+export function effectiveManifestUrl(settings: Settings): string {
+  return settings.manifestUrlOverride?.trim() || APP.manifestUrl
 }
 
 let cache: Settings | null = null
 
 export async function loadSettings(): Promise<Settings> {
   if (cache) return cache
-  const stored = await readJson<Partial<Settings>>(paths.settingsFile())
+  const stored = await readJson<Partial<Settings> & { manifestUrl?: string }>(
+    paths.settingsFile()
+  )
   const merged: Settings = { ...defaults(), ...(stored ?? {}) }
+
+  // До этой версии адрес манифеста сохранялся целиком, и сохранённое
+  // значение навсегда перекрывало вкомпилированное. Такие записи выбрасываем:
+  // адрес раздачи с тех пор мог смениться, и почти наверняка сменился.
+  const legacy = 'manifestUrl' in (stored ?? {})
+  if (legacy) {
+    delete (merged as Partial<Settings> & { manifestUrl?: string }).manifestUrl
+    merged.manifestUrlOverride = null
+  }
 
   // Границы ползунка памяти зависят от машины, а settings.json мог приехать
   // с другого компьютера вместе с папкой профиля.
@@ -36,6 +52,9 @@ export async function loadSettings(): Promise<Settings> {
   }
 
   cache = merged
+  // Переписываем файл сразу, а не при следующем сохранении: иначе в нём
+  // ещё долго висел бы мёртвый адрес, по которому будут искать причину.
+  if (legacy) await writeJson(paths.settingsFile(), merged)
   return merged
 }
 
