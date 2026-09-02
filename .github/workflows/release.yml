@@ -72,11 +72,21 @@ jobs:
           echo "== запуск"
           "$app/Contents/MacOS/Mine Launcher" --selftest
 
+          # dmg собирается из того же .app и ломаться в нём нечему, но
+          # предполагать это после двух сегодняшних сюрпризов не хочется.
+          dmg=$(ls dist/*.dmg)
+          echo "== образ диска: $dmg"
+          mount=$(hdiutil attach "$dmg" -nobrowse -readonly | grep -o '/Volumes/.*' | head -1)
+          trap 'hdiutil detach "$mount" -quiet || true' EXIT
+          codesign --verify --deep --strict "$mount/Mine Launcher.app"
+          echo "   подпись в образе цела"
+
       - uses: actions/upload-artifact@v5
         with:
           name: MineLauncher-${{ matrix.os }}
           path: |
             dist/*.exe
             dist/*.zip
+            dist/*.dmg
           if-no-files-found: error
           retention-days: 30
