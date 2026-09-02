@@ -1,6 +1,6 @@
 {
   "name": "mine-launcher",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Простой лаунчер модифицированного Minecraft для игры с друзьями",
   "main": "./out/main/index.js",
   "license": "MIT",
