@@ -22,13 +22,25 @@ export const adoptiumOs = mojangOs === 'osx' ? 'mac' : mojangOs
 export const adoptiumArch = process.arch === 'arm64' ? 'aarch64' : 'x64'
 
 /**
- * Сколько памяти можно отдать игре. Оставляем системе минимум 2 ГБ,
- * иначе на 8-гигабайтной машине ползунок предложит уйти в своп.
+ * Больше этого выдавать бессмысленно почти всегда. Minecraft не использует
+ * лишнюю память — он ею только реже занимается уборкой, зато каждая уборка
+ * становится длиннее и заметнее как фриз. Сборке из десятка модов хватает
+ * четырёх гигабайт, тяжёлым техно-сборкам — шести.
+ */
+const SANE_MAX_MB = 6144
+
+/**
+ * Сколько памяти можно отдать игре. Оставляем системе минимум 2 ГБ, иначе
+ * на 8-гигабайтной машине ползунок предложит уйти в своп.
+ *
+ * Рекомендация намеренно не «половина оперативки»: на машине с 32 ГБ это
+ * дало бы 16 ГБ кучи, от которой игре только хуже.
  */
 export function memoryLimitsMb(): { min: number; max: number; recommended: number } {
   const totalMb = Math.floor(os.totalmem() / 1024 / 1024)
   const max = Math.max(2048, totalMb - 2048)
-  const recommended = Math.min(max, Math.max(2048, Math.floor(totalMb / 2 / 512) * 512))
+  const half = Math.floor(totalMb / 2 / 512) * 512
+  const recommended = Math.min(max, SANE_MAX_MB, Math.max(2048, half))
   return { min: 1024, max, recommended }
 }
 
