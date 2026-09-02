@@ -28,7 +28,18 @@ export async function ensureJava(
   const home = path.join(runtimeDir, 'home')
   const marker = path.join(runtimeDir, '.release')
 
-  if (await exists(javaBinary(home))) return javaBinary(home)
+  // Метка пишется последней, уже после распаковки и переноса. Проверять по
+  // ней, а не по наличию java: оборванная установка оставляет исполняемый
+  // файл на месте, но без половины рантайма, и такая Java падает при старте
+  // с невнятным «could not open lib/jvm.cfg». Отличить одно от другого по
+  // самому бинарю невозможно.
+  if ((await exists(marker)) && (await exists(javaBinary(home)))) {
+    return javaBinary(home)
+  }
+
+  // Недоустановленное сносим целиком, а не докачиваем поверх: что именно
+  // успело лечь, мы не знаем.
+  await fs.rm(home, { recursive: true, force: true })
 
   onProgress(null, `Ищу Java ${major} для ${adoptiumOs}/${adoptiumArch}`)
   const query = new URLSearchParams({
