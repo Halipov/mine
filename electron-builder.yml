@@ -1,0 +1,45 @@
+appId: com.minelauncher.app
+productName: Mine Launcher
+copyright: Личный проект, не для распространения
+
+directories:
+  buildResources: resources
+  output: dist
+
+files:
+  - out/**
+  - package.json
+
+# Имена совпадают с тем, что ищет самообновление в updater.ts.
+artifactName: MineLauncher-${version}-${os}-${arch}.${ext}
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
+
+mac:
+  category: public.app-category.games
+  target:
+    - target: zip
+      arch: [arm64, x64]
+    - target: dmg
+      arch: [arm64, x64]
+  # Сертификата Apple Developer нет, поэтому обычную подпись отключаем,
+  # а вместо неё в afterPack ставим ad-hoc — без неё приложение на Apple
+  # Silicon просто не запустится.
+  identity: null
+  gatekeeperAssess: false
+
+afterPack: ./scripts/adhoc-sign.cjs
+
+# Блока publish здесь намеренно нет. Локальной сборке он не нужен, а на
+# GitHub Actions electron-builder определит репозиторий по .git/config
+# рабочей копии. Прописанный здесь провайдер без owner/repo ломает сборку
+# на машине, где ещё нет git-remote.

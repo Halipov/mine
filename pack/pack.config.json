@@ -1,0 +1,26 @@
+{
+  "id": "smp",
+  "name": "Наш сервер",
+  "minecraft": "1.21.1",
+  "fabricLoader": "latest",
+  "recommendedRamMb": 6144,
+
+  "server": {
+    "name": "Наш сервер",
+    "host": "CHANGE-ME.example.com",
+    "port": 25565
+  },
+
+  "github": {
+    "owner": "CHANGE-ME",
+    "repo": "minecraft-pack"
+  },
+
+  "//": "Моды с Modrinth: только слаг из адреса страницы мода. Версия подбирается автоматически под minecraft выше. Чтобы закрепить конкретную — { \"slug\": \"sodium\", \"version\": \"mc1.21.1-0.6.0\" }.",
+  "modrinth": [
+    "fabric-api",
+    "sodium",
+    "lithium",
+    "modmenu"
+  ]
+}

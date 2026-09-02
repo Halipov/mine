@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "id": "smp",
+  "name": "Наш сервер",
+  "packVersion": "pack-test",
+  "minecraft": "1.21.1",
+  "fabricLoader": "latest",
+  "server": {
+    "name": "Наш сервер",
+    "host": "CHANGE-ME.example.com",
+    "port": 25565
+  },
+  "recommendedRamMb": 6144,
+  "mods": [
+    {
+      "name": "fabric-api-0.116.17+1.21.1.jar",
+      "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/Mys3P7lK/fabric-api-0.116.17%2B1.21.1.jar",
+      "sha1": "810b2b0195371a012906241d8b85a32a1d6de53c",
+      "size": 2452735,
+      "title": "[1.21.1] Fabric API 0.116.17+1.21.1 (0.116.17+1.21.1)"
+    },
+    {
+      "name": "sodium-fabric-0.8.13+mc1.21.1.jar",
+      "url": "https://cdn.modrinth.com/data/AANobbMI/versions/SMxNOGZ6/sodium-fabric-0.8.13%2Bmc1.21.1.jar",
+      "sha1": "003c114c85ca88ef3362e018deb6aca0c682d6a1",
+      "size": 1574609,
+      "title": "Sodium 0.8.13 for Fabric 1.21.1 (mc1.21.1-0.8.13-fabric)"
+    },
+    {
+      "name": "lithium-fabric-0.15.4+mc1.21.1.jar",
+      "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/lithium-fabric-0.15.4%2Bmc1.21.1.jar",
+      "sha1": "7d82a004403b7780d4443d8e40361a55cfd0ae63",
+      "size": 797454,
+      "title": "Lithium 0.15.4 for Fabric (mc1.21.1-0.15.4-fabric)"
+    },
+    {
+      "name": "modmenu-11.0.4.jar",
+      "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/v6Xx3fbU/modmenu-11.0.4.jar",
+      "sha1": "8af1b0b9ee18eab5cd5e5c97c497f0e473c49e9a",
+      "size": 973059,
+      "title": "v11.0.4 for 1.21 (11.0.4)"
+    }
+  ],
+  "extraFiles": []
+}
