@@ -1,15 +1,16 @@
 name: Сборка лаунчера
 
-# Windows-инсталлятор и macOS-бандл собираются на своих раннерах:
-# .app и .dmg с чужой платформы собрать нельзя, да и ad-hoc подпись
-# требует настоящей macOS.
+# Раздачей занимается наш сервер, а не GitHub, поэтому здесь только сборка.
+# Нужна она в первую очередь ради macOS: .app и .dmg с Windows не собрать,
+# а ad-hoc подпись требует настоящей macOS.
+#
+# Готовые файлы приезжают артефактами запуска. Скачал, распаковал в dist/
+# проекта лаунчера — и дальше в серверном проекте:
+#   npm run publish-launcher
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -36,23 +37,9 @@ jobs:
 
       - run: npm run build
 
-      # Запуск по тегу v* — это выпуск версии: собираем и кладём в релиз,
-      # откуда лаунчер у друзей увидит обновление.
-      - name: Собрать и выложить в релиз
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: npx electron-builder ${{ matrix.flag }} --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npx electron-builder ${{ matrix.flag }} --publish never
 
-      # Ручной запуск — просто проверка, что всё собирается. Релиз при этом
-      # трогать нельзя: иначе кнопка «Run workflow» молча создавала бы черновик.
-      - name: Собрать без публикации
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        run: npx electron-builder ${{ matrix.flag }} --publish never
-
-      - name: Приложить сборку к запуску
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: MineLauncher-${{ matrix.os }}
           path: |
@@ -60,4 +47,4 @@ jobs:
             dist/*.dmg
             dist/*.zip
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30

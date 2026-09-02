@@ -10,12 +10,9 @@
     "build": "electron-vite build",
     "start": "node scripts/run.mjs electron-vite preview",
     "selftest": "electron-vite build && node scripts/run.mjs electron . --selftest",
-    "pack:build": "node tools/build-pack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "pack:win": "electron-vite build && electron-builder --win --publish never",
-    "pack:mac": "electron-vite build && electron-builder --mac --publish never",
-    "launcher:publish": "node tools/publish-launcher.mjs",
-    "web:serve": "node tools/serve-web.mjs"
+    "pack:mac": "electron-vite build && electron-builder --mac --publish never"
   },
   "dependencies": {
     "extract-zip": "^2.0.1",
