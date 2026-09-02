@@ -130,25 +130,42 @@ export async function runSelfTest(): Promise<number> {
     () => false
   ))
 
-  // 7. Моды на месте, лишнего нет.
+  // 7. Моды на месте, лишнего нет. Манифест общий с сервером, поэтому
+  //    считаем только те, что предназначены клиенту.
   const modsDir = path.join(launchOptions.gameDir, 'mods')
-  const modFiles = (await fs.readdir(modsDir).catch((): string[] => [])).filter((f) => f.endsWith('.jar'))
-  check('моды скачаны', modFiles.length === manifest.mods.length, `${modFiles.length} из ${manifest.mods.length}`)
+  const clientMods = manifest.mods.filter((mod) => mod.side !== 'server')
+  const serverOnly = manifest.mods.filter((mod) => mod.side === 'server')
+  const modFiles = (await fs.readdir(modsDir).catch((): string[] => [])).filter((f) =>
+    f.endsWith('.jar')
+  )
+  check(
+    'клиентские моды скачаны',
+    modFiles.length === clientMods.length,
+    `${modFiles.length} из ${clientMods.length}`
+  )
+  check(
+    'серверные моды на клиент не поехали',
+    serverOnly.every((mod) => !modFiles.includes(mod.name ?? '')),
+    serverOnly.length > 0 ? `серверных в манифесте: ${serverOnly.length}` : 'таких в сборке нет'
+  )
 
   // 8. Синхронизация состава: убранный из сборки мод должен исчезнуть,
   //    а мод, который игрок положил сам, — остаться. Это ровно то место,
   //    где легко случайно стереть чужие файлы.
-  if (manifest.mods.length > 0) {
+  if (clientMods.length > 0) {
     const personal = path.join(modsDir, 'moy-lichniy-mod.jar')
     await fs.writeFile(personal, 'это не настоящий мод')
 
-    const dropped = manifest.mods[manifest.mods.length - 1]
+    // Убираем именно клиентский мод: серверный на диск и не попадал,
+    // проверка на нём ничего бы не значила.
+    const dropped = clientMods[clientMods.length - 1]
     const droppedFile = path.join(
       modsDir,
       dropped.name ?? decodeURIComponent(new URL(dropped.url).pathname.split('/').pop() ?? '')
     )
+    const without = manifest.mods.filter((mod) => mod !== dropped)
 
-    await syncPackFiles({ ...manifest, mods: manifest.mods.slice(0, -1) }, () => {})
+    await syncPackFiles({ ...manifest, mods: without }, () => {})
     check('мод, убранный из сборки, удалён', !(await exists(droppedFile)), path.basename(droppedFile))
     check('чужой мод не тронут', await exists(personal))
 
@@ -215,7 +232,13 @@ async function syntheticManifest(mcVersion: string): Promise<PackManifest> {
     const versions = (await res.json()) as ModrinthVersion[]
     const file = versions[0]?.files.find((f) => f.primary) ?? versions[0]?.files[0]
     if (!file) throw new Error(`На Modrinth нет ${slug} под Minecraft ${mcVersion}`)
-    mods.push({ name: file.filename, url: file.url, sha1: file.hashes.sha1, size: file.size })
+    mods.push({
+      name: file.filename,
+      url: file.url,
+      sha1: file.hashes.sha1,
+      size: file.size,
+      side: 'both'
+    })
   }
 
   return {

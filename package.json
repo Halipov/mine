@@ -13,7 +13,9 @@
     "pack:build": "node tools/build-pack.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "pack:win": "electron-vite build && electron-builder --win --publish never",
-    "pack:mac": "electron-vite build && electron-builder --mac --publish never"
+    "pack:mac": "electron-vite build && electron-builder --mac --publish never",
+    "launcher:publish": "node tools/publish-launcher.mjs",
+    "web:serve": "node tools/serve-web.mjs"
   },
   "dependencies": {
     "extract-zip": "^2.0.1",

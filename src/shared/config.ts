@@ -6,22 +6,20 @@ export const APP = {
   name: 'Mine Launcher',
 
   /**
-   * Репозиторий на GitHub, где лежат манифест сборки и релизы лаунчера.
-   * Отсюда же берутся обновления самого лаунчера.
+   * Корень раздачи. Тот же сервер, что и Minecraft: он отдаёт манифест
+   * сборки, свои моды и сборки самого лаунчера.
+   *
+   * Для локальной обкатки — адрес локальной раздачи, потом домен сервера.
    */
-  github: {
-    owner: 'Halipov',
-    repo: 'mine'
-  },
+  baseUrl: 'http://127.0.0.1:8080',
 
-  /**
-   * Ссылка на манифест сборки по умолчанию. Игрок может переопределить её
-   * в настройках, но обычно этого никогда не потребуется.
-   */
+  /** Манифест сборки: состав модов, версия игры, адрес сервера. */
   get manifestUrl(): string {
-    return `https://raw.githubusercontent.com/${APP.github.owner}/${APP.github.repo}/main/pack.json`
+    return `${APP.baseUrl}/pack.json`
   },
 
-  /** Базовое имя файлов релиза — должно совпадать с artifactName в electron-builder.yml. */
-  artifactPrefix: 'MineLauncher'
+  /** Описание последней версии лаунчера для самообновления. */
+  get updateUrl(): string {
+    return `${APP.baseUrl}/launcher/latest.json`
+  }
 } as const

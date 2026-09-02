@@ -48,7 +48,9 @@ export function Play(props: Props): JSX.Element {
             <span className="chip">
               Fabric {manifest.fabricLoader === 'latest' ? '(последний)' : manifest.fabricLoader}
             </span>
-            <span className="chip">{manifest.mods.length} модов</span>
+            <span className="chip">
+              {manifest.mods.filter((mod) => mod.side !== 'server').length} модов
+            </span>
             <span className="chip">{formatRam(settings.ramMb)} памяти</span>
           </div>
         )}

@@ -1,7 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
 import path from 'node:path'
 import { BrowserWindow, app, ipcMain, shell } from 'electron'
-import type { PackManifest, Profile, Progress, Settings } from '@shared/types'
+import type { PackManifest, Profile, Progress, Settings, UpdateInfo } from '@shared/types'
 import { APP } from '@shared/config'
 import { prepareAndLaunch } from './core/installer'
 import { cacheManifest, compareVersions, fetchManifest, loadCachedManifest } from './core/manifest'
@@ -14,7 +14,7 @@ import {
   makeProfile,
   saveSettings
 } from './settings'
-import { checkForUpdate, downloadAndApply, type UpdateInfo } from './updater'
+import { checkForUpdate, downloadAndApply } from './updater'
 
 app.setName(APP.name)
 

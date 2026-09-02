@@ -19,7 +19,16 @@ export const ModEntrySchema = z.object({
   sha1: z.string().length(40),
   size: z.number().int().positive().optional(),
   /** Человекочитаемое описание — показываем в списке модов. */
-  title: z.string().optional()
+  title: z.string().optional(),
+  /**
+   * Кому нужен мод. Sodium клиентский и уронит сервер, Lithium серверный
+   * и на клиенте бесполезен, контент-моды нужны обеим сторонам.
+   *
+   * Манифест один на клиент и сервер намеренно: версии модов у них обязаны
+   * совпадать, иначе игрока выкинет при заходе. Каждая сторона берёт из
+   * общего списка своё.
+   */
+  side: z.enum(['client', 'server', 'both']).default('both')
 })
 
 export const ExtraFileSchema = z.object({
@@ -135,4 +144,6 @@ export interface UpdateInfo {
   url: string
   fileName: string
   size: number
+  /** Раздача своя, а не GitHub, поэтому целостность проверяем сами. */
+  sha256: string
 }

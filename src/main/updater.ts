@@ -5,23 +5,21 @@ import path from 'node:path'
 import { app } from 'electron'
 import extractZip from 'extract-zip'
 import { APP } from '@shared/config'
+import type { UpdateInfo } from '@shared/types'
 import { downloadFile, fetchJson } from './core/http'
 import { compareVersions } from './core/manifest'
 
-interface GithubRelease {
-  tag_name: string
-  body: string
-  draft: boolean
-  prerelease: boolean
-  assets: Array<{ name: string; browser_download_url: string; size: number }>
-}
-
-export interface UpdateInfo {
+/**
+ * Описание последней версии, которое лежит на сервере рядом с файлами.
+ * Генерируется командой `npm run launcher:publish`.
+ */
+interface LatestJson {
   version: string
-  notes: string
-  url: string
-  fileName: string
-  size: number
+  notes?: string
+  files: Record<
+    string,
+    { url: string; size: number; sha256: string } | undefined
+  >
 }
 
 /**
@@ -30,53 +28,41 @@ export interface UpdateInfo {
  * Штатный electron-updater на macOS требует приложения, подписанного
  * сертификатом Apple Developer: Squirrel.Mac проверяет подпись и без неё
  * молча отказывается ставить апдейт. Поэтому обновляемся сами — скачиваем
- * ассет релиза и подменяем бандл. Побочный плюс: файл, скачанный самим
- * приложением, не получает атрибут карантина, и Gatekeeper к нему не лезет.
+ * файл с нашего же сервера и подменяем приложение. Побочный плюс: файл,
+ * скачанный самим приложением, не получает атрибут карантина, и Gatekeeper
+ * к нему не придирается.
+ *
+ * Раздача своя, а не GitHub, поэтому целостность проверяем сами: в latest.json
+ * лежит SHA-256, и без совпадения обновление не ставится.
  */
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
-  // Список, а не releases/latest: в том же репозитории живут релизы сборки
-  // с модами (теги pack-*), и «последним» вполне может оказаться один из них.
-  // Релизами лаунчера считаем только теги вида v1.2.3.
-  const url = `https://api.github.com/repos/${APP.github.owner}/${APP.github.repo}/releases?per_page=30`
-  const releases = await fetchJson<GithubRelease[]>(url)
+  const latest = await fetchJson<LatestJson>(`${APP.updateUrl}?_=${Date.now().toString(36)}`)
+  if (compareVersions(latest.version, app.getVersion()) <= 0) return null
 
-  for (const release of releases) {
-    if (release.draft || release.prerelease) continue
-    if (!/^v\d/.test(release.tag_name)) continue
+  const key = platformKey()
+  const file = latest.files?.[key]
+  if (!file) return null
 
-    const latest = release.tag_name.replace(/^v/, '')
-    if (compareVersions(latest, app.getVersion()) <= 0) return null
-
-    const asset = pickAsset(release.assets, latest)
-    // Сборка под эту платформу могла не доехать (упал раннер) — тогда смотрим
-    // на предыдущий релиз лаунчера, а не сдаёмся совсем.
-    if (asset) {
-      return {
-        version: latest,
-        notes: release.body ?? '',
-        url: asset.browser_download_url,
-        fileName: asset.name,
-        size: asset.size
-      }
-    }
+  return {
+    version: latest.version,
+    notes: latest.notes ?? '',
+    url: file.url,
+    fileName: path.basename(new URL(file.url).pathname),
+    size: file.size,
+    sha256: file.sha256
   }
-  return null
 }
 
-function pickAsset(
-  assets: GithubRelease['assets'],
-  version: string
-): GithubRelease['assets'][number] | undefined {
-  const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
-  if (process.platform === 'win32') {
-    return assets.find((a) => a.name.endsWith('.exe') && a.name.includes(version))
+/**
+ * Ключ платформы в latest.json. Intel-сборку на Apple Silicon подсовывать
+ * нельзя: она запустится через Rosetta и будет заметно тормозить.
+ */
+function platformKey(): string {
+  if (process.platform === 'win32') return 'win-x64'
+  if (process.platform === 'darwin') {
+    return process.arch === 'arm64' ? 'mac-arm64' : 'mac-x64'
   }
-  // На маке важно не перепутать сборки: Intel-бинарь на Apple Silicon
-  // запустится через Rosetta и будет заметно тормозить.
-  return (
-    assets.find((a) => a.name.endsWith(`-mac-${arch}.zip`)) ??
-    assets.find((a) => a.name.endsWith('-mac.zip'))
-  )
+  return `${process.platform}-${process.arch}`
 }
 
 export async function downloadAndApply(
@@ -86,7 +72,10 @@ export async function downloadAndApply(
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'mine-launcher-update-'))
   const file = path.join(dir, info.fileName)
 
-  await downloadFile({ url: info.url, dest: file, size: info.size }, onProgress)
+  await downloadFile(
+    { url: info.url, dest: file, size: info.size, sha256: info.sha256 },
+    onProgress
+  )
 
   if (process.platform === 'win32') {
     // Инсталлятор NSIS в тихом режиме сам перезапустит лаунчер.

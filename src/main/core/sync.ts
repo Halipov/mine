@@ -43,6 +43,9 @@ export async function syncPackFiles(
   const desired = new Map<string, DownloadTask>()
 
   for (const mod of manifest.mods) {
+    // Серверные моды лежат в том же манифесте, но клиенту не нужны —
+    // а некоторые из них клиент ещё и уронят.
+    if (mod.side === 'server') continue
     const relative = `mods/${modFileName(mod.url, mod.name)}`
     desired.set(relative, {
       url: mod.url,
