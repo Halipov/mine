@@ -12,8 +12,8 @@
   },
 
   "github": {
-    "owner": "CHANGE-ME",
-    "repo": "minecraft-pack"
+    "owner": "Halipov",
+    "repo": "mine"
   },
 
   "//": "Моды с Modrinth: только слаг из адреса страницы мода. Версия подбирается автоматически под minecraft выше. Чтобы закрепить конкретную — { \"slug\": \"sodium\", \"version\": \"mc1.21.1-0.6.0\" }.",

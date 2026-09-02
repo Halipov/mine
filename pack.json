@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "smp",
   "name": "Наш сервер",
-  "packVersion": "pack-test",
+  "packVersion": "pack-2026-09-02",
   "minecraft": "1.21.1",
   "fabricLoader": "latest",
   "server": {
@@ -14,6 +14,7 @@
   "mods": [
     {
       "name": "fabric-api-0.116.17+1.21.1.jar",
+      "project": "P7dR8mSH",
       "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/Mys3P7lK/fabric-api-0.116.17%2B1.21.1.jar",
       "sha1": "810b2b0195371a012906241d8b85a32a1d6de53c",
       "size": 2452735,
@@ -21,6 +22,7 @@
     },
     {
       "name": "sodium-fabric-0.8.13+mc1.21.1.jar",
+      "project": "AANobbMI",
       "url": "https://cdn.modrinth.com/data/AANobbMI/versions/SMxNOGZ6/sodium-fabric-0.8.13%2Bmc1.21.1.jar",
       "sha1": "003c114c85ca88ef3362e018deb6aca0c682d6a1",
       "size": 1574609,
@@ -28,6 +30,7 @@
     },
     {
       "name": "lithium-fabric-0.15.4+mc1.21.1.jar",
+      "project": "gvQqBUqZ",
       "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/N08Z8wog/lithium-fabric-0.15.4%2Bmc1.21.1.jar",
       "sha1": "7d82a004403b7780d4443d8e40361a55cfd0ae63",
       "size": 797454,
@@ -35,10 +38,19 @@
     },
     {
       "name": "modmenu-11.0.4.jar",
+      "project": "mOgUt4GM",
       "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/v6Xx3fbU/modmenu-11.0.4.jar",
       "sha1": "8af1b0b9ee18eab5cd5e5c97c497f0e473c49e9a",
       "size": 973059,
       "title": "v11.0.4 for 1.21 (11.0.4)"
+    },
+    {
+      "name": "placeholder-api-2.4.2+1.21.jar",
+      "project": "eXts2L7r",
+      "url": "https://cdn.modrinth.com/data/eXts2L7r/versions/U5bhVym2/placeholder-api-2.4.2%2B1.21.jar",
+      "sha1": "aa1b9a49f9f190dfe4825c502b150817dd2998c3",
+      "size": 232325,
+      "title": "2.4.2+1.21 (2.4.2+1.21)"
     }
   ],
   "extraFiles": []

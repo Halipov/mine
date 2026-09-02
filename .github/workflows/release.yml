@@ -36,7 +36,28 @@ jobs:
 
       - run: npm run build
 
-      - name: Собрать и опубликовать
+      # Запуск по тегу v* — это выпуск версии: собираем и кладём в релиз,
+      # откуда лаунчер у друзей увидит обновление.
+      - name: Собрать и выложить в релиз
+        if: startsWith(github.ref, 'refs/tags/v')
         run: npx electron-builder ${{ matrix.flag }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Ручной запуск — просто проверка, что всё собирается. Релиз при этом
+      # трогать нельзя: иначе кнопка «Run workflow» молча создавала бы черновик.
+      - name: Собрать без публикации
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: npx electron-builder ${{ matrix.flag }} --publish never
+
+      - name: Приложить сборку к запуску
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: MineLauncher-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+          retention-days: 7

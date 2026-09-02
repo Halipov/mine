@@ -10,8 +10,8 @@ export const APP = {
    * Отсюда же берутся обновления самого лаунчера.
    */
   github: {
-    owner: 'CHANGE-ME',
-    repo: 'minecraft-pack'
+    owner: 'Halipov',
+    repo: 'mine'
   },
 
   /**
